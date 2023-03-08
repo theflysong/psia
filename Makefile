@@ -34,3 +34,7 @@ $(OUTPUT) : $(OBJECTS)
 testbench: $(TESTBENCH_A_OBJECTS) $(TESTBENCH_B_OBJECTS)
 	$(GCC) $(TESTBENCH_A_OBJECTS) -o $(TESTBENCH_A)
 	$(GCC) $(TESTBENCH_B_OBJECTS) -L"./" -lpsia -o $(TESTBENCH_B)
+
+.PHONY: all
+all: $(OUTPUT) testbench
+	echo "done"

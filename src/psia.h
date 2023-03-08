@@ -5,7 +5,8 @@ typedef void *psia_process_t;
 typedef void *psia_stdin_t;
 typedef void *psia_stdout_t;
 
-psia_process_t create_psia_process(const char *image_name, char *argument);
+// redirect=1 => redirect the stdio of process
+psia_process_t create_psia_process(const char *image_name, char *argument, int redirect);
 int destroy_psia_process(psia_process_t process);
 psia_stdin_t get_psia_process_stdin(psia_process_t process);
 psia_stdout_t get_psia_process_stdout(psia_process_t process);

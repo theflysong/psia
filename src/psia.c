@@ -5,8 +5,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-psia_process_t create_psia_process(const char *image_name, char *argument) {
-    return (psia_process_t)__psia_arch_create_process(image_name, argument);
+psia_process_t create_psia_process(const char *image_name, char *argument, int redirect) {
+    return (psia_process_t)__psia_arch_create_process(image_name, argument, redirect);
 }
 
 int destroy_psia_process(psia_process_t process) {

@@ -1,7 +1,8 @@
 #ifndef __ARCH_GENERAL_API_HEADER__
 #define __ARCH_GENERAL_API_HEADER__
 
-void *__psia_arch_create_process(const char *image_name, char *argument);
+// redirect=1 => redirect the stdio of process
+void *__psia_arch_create_process(const char *image_name, char *argument, int redirect);
 int __psia_arch_destroy_process(void *__psia_arch_process);
 void *__psia_arch_get_stdin(void *__psia_arch_process);
 void *__psia_arch_get_stdout(void *__psia_arch_process);

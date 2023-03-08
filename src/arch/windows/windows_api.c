@@ -15,16 +15,14 @@ typedef struct {
     PROCESS_INFORMATION process;
 } __psia_arch_windows_process_t;
 
-void *__psia_arch_create_process(const char *image_name, char *argument) {
+void *__psia_arch_create_process(const char *image_name, char *argument, int redirect) {
     __psia_arch_windows_process_t *process = (__psia_arch_windows_process_t *)malloc(sizeof(__psia_arch_windows_process_t));
     memset(process, 0, sizeof(__psia_arch_windows_process_t));
 
-    char _image_name[512];
-    if (strlen(image_name) + 4 > 512) {
-        return NULL;
-    }
-    strcpy(_image_name, image_name);
-    strcat(_image_name, ".exe");
+    char cmdline[512];
+    strcpy(cmdline, image_name);
+    strcat(cmdline, " ");
+    strcat(cmdline, argument);
 
     SECURITY_ATTRIBUTES se_attr = {
         .nLength = sizeof(SECURITY_ATTRIBUTES),
@@ -32,19 +30,21 @@ void *__psia_arch_create_process(const char *image_name, char *argument) {
         .lpSecurityDescriptor = NULL
     };
 
-    if(! CreatePipe(&process->stdin, &process->write_stdin, &se_attr, 0)) {
-        free(process);
-        return NULL;
-    }
+    if (redirect) {
+        if(! CreatePipe(&process->stdin, &process->write_stdin, &se_attr, 0)) {
+            free(process);
+            return NULL;
+        }
 
-    if(! CreatePipe(&process->read_stdout, &process->stdout, &se_attr, 0)) {
-        free(process);
-        return NULL;
-    }
+        if(! CreatePipe(&process->read_stdout, &process->stdout, &se_attr, 0)) {
+            free(process);
+            return NULL;
+        }
 
-    if(! CreatePipe(&process->read_stderr, &process->stderr, &se_attr, 0)) {
-        free(process);
-        return NULL;
+        if(! CreatePipe(&process->read_stderr, &process->stderr, &se_attr, 0)) {
+            free(process);
+            return NULL;
+        }
     }
 
     PROCESS_INFORMATION process_info = {
@@ -52,14 +52,22 @@ void *__psia_arch_create_process(const char *image_name, char *argument) {
 
     STARTUPINFO startup_info = {
         .cb = sizeof(STARTUPINFO),
-        .dwFlags = STARTF_USESTDHANDLES,
-        .hStdInput = process->stdin,
-        .hStdOutput = process->stdout,
-        .hStdError = process->stderr
+        .dwFlags = STARTF_USESTDHANDLES
     };
 
+    if (redirect) {
+        startup_info.hStdInput = process->stdin;
+        startup_info.hStdOutput = process->stdout;
+        startup_info.hStdError = process->stderr;
+    }
+    else {
+        startup_info.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+        startup_info.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+        startup_info.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+    }
+
     if(! CreateProcess(
-        _image_name, argument,
+        NULL, cmdline,
         NULL, NULL, TRUE,
         0, NULL, NULL,
         &startup_info, &process_info
@@ -77,8 +85,9 @@ static int destroy_handle(HANDLE handle) {
         if (CloseHandle(handle)) {
             return 1;
         }
+        return 0;
     }
-    return 0;
+    return 1;
 }
 
 int __psia_arch_destroy_process(void *__psia_arch_process) {
